@@ -153,8 +153,8 @@
 
     .ticker-item { display: flex; gap: 8px; align-items: center; }
     .ticker-item .sym { color: var(--text-mid); }
-    .ticker-item .up { color: var(--green); }
-    .ticker-item .dn { color: var(--red); }
+    .ticker-item .up, .ticker-item .ticker-price.up, .ticker-item .ticker-chg.up { color: var(--green); }
+    .ticker-item .dn, .ticker-item .ticker-price.dn, .ticker-item .ticker-chg.dn { color: var(--red); }
 
     @keyframes ticker {
       0% { transform: translateX(0); }
@@ -802,19 +802,19 @@
   <!-- TICKER -->
   <div class="ticker-bar">
     <div class="ticker-inner">
-      <span class="ticker-item"><span class="sym">BTC/USDT</span><span class="up">▲ 67,241.80</span><span class="up">+2.14%</span></span>
-      <span class="ticker-item"><span class="sym">ETH/USDT</span><span class="up">▲ 3,518.40</span><span class="up">+1.87%</span></span>
-      <span class="ticker-item"><span class="sym">SOL/USDT</span><span class="dn">▼ 142.30</span><span class="dn">-0.63%</span></span>
-      <span class="ticker-item"><span class="sym">BNB/USDT</span><span class="up">▲ 412.70</span><span class="up">+0.92%</span></span>
-      <span class="ticker-item"><span class="sym">AVAX/USDT</span><span class="dn">▼ 28.14</span><span class="dn">-1.20%</span></span>
+      <span class="ticker-item" data-sym="BTC"><span class="sym">BTC/USDT</span><span class="ticker-price up">▲ 67,241.80</span><span class="ticker-chg up">+2.14%</span></span>
+      <span class="ticker-item" data-sym="ETH"><span class="sym">ETH/USDT</span><span class="ticker-price up">▲ 3,518.40</span><span class="ticker-chg up">+1.87%</span></span>
+      <span class="ticker-item" data-sym="SOL"><span class="sym">SOL/USDT</span><span class="ticker-price dn">▼ 142.30</span><span class="ticker-chg dn">-0.63%</span></span>
+      <span class="ticker-item" data-sym="BNB"><span class="sym">BNB/USDT</span><span class="ticker-price up">▲ 412.70</span><span class="ticker-chg up">+0.92%</span></span>
+      <span class="ticker-item" data-sym="AVAX"><span class="sym">AVAX/USDT</span><span class="ticker-price dn">▼ 28.14</span><span class="ticker-chg dn">-1.20%</span></span>
       <span class="ticker-item"><span class="sym">LATENCY</span><span class="up">0.38ms</span></span>
       <span class="ticker-item"><span class="sym">STRATEGIES</span><span>4 ACTIVE</span></span>
       <!-- duplicate for seamless loop -->
-      <span class="ticker-item"><span class="sym">BTC/USDT</span><span class="up">▲ 67,241.80</span><span class="up">+2.14%</span></span>
-      <span class="ticker-item"><span class="sym">ETH/USDT</span><span class="up">▲ 3,518.40</span><span class="up">+1.87%</span></span>
-      <span class="ticker-item"><span class="sym">SOL/USDT</span><span class="dn">▼ 142.30</span><span class="dn">-0.63%</span></span>
-      <span class="ticker-item"><span class="sym">BNB/USDT</span><span class="up">▲ 412.70</span><span class="up">+0.92%</span></span>
-      <span class="ticker-item"><span class="sym">AVAX/USDT</span><span class="dn">▼ 28.14</span><span class="dn">-1.20%</span></span>
+      <span class="ticker-item" data-sym="BTC"><span class="sym">BTC/USDT</span><span class="ticker-price up">▲ 67,241.80</span><span class="ticker-chg up">+2.14%</span></span>
+      <span class="ticker-item" data-sym="ETH"><span class="sym">ETH/USDT</span><span class="ticker-price up">▲ 3,518.40</span><span class="ticker-chg up">+1.87%</span></span>
+      <span class="ticker-item" data-sym="SOL"><span class="sym">SOL/USDT</span><span class="ticker-price dn">▼ 142.30</span><span class="ticker-chg dn">-0.63%</span></span>
+      <span class="ticker-item" data-sym="BNB"><span class="sym">BNB/USDT</span><span class="ticker-price up">▲ 412.70</span><span class="ticker-chg up">+0.92%</span></span>
+      <span class="ticker-item" data-sym="AVAX"><span class="sym">AVAX/USDT</span><span class="ticker-price dn">▼ 28.14</span><span class="ticker-chg dn">-1.20%</span></span>
       <span class="ticker-item"><span class="sym">LATENCY</span><span class="up">0.38ms</span></span>
       <span class="ticker-item"><span class="sym">STRATEGIES</span><span>4 ACTIVE</span></span>
     </div>
@@ -1103,4 +1103,94 @@
       <a href="#architecture">Docs</a>
       <a href="/cdn-cgi/l/email-protection#f7">Contact</a>
     </div>
-  </fo
+  </footer>
+
+  <script>
+  (function () {
+    var SYMBOLS = ['BTC', 'ETH', 'SOL', 'BNB', 'AVAX'];
+    var STREAM_URL = 'wss://stream.binance.com:9443/stream?streams=' +
+      SYMBOLS.map(function (s) { return s.toLowerCase() + 'usdt@ticker'; }).join('/');
+
+    /* How often to repaint the DOM (ms). The WS stream fires ~every second
+       per symbol but we intentionally slow down the visual refresh. */
+    var UPDATE_INTERVAL = 30000;
+    /* First paint correction: apply data shortly after the socket delivers
+       its first batch of messages, before the regular interval fires. */
+    var FIRST_UPDATE_DELAY = 4000;
+    var MAX_BACKOFF = 64000;
+
+    var cache = {};
+    var retryDelay = 2000;
+    var ws = null;
+
+    function fmt(price) {
+      var n = parseFloat(price);
+      if (n >= 1000) return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      return n.toFixed(2);
+    }
+
+    function fmtPct(pct) {
+      var n = parseFloat(pct);
+      return (n >= 0 ? '+' : '') + n.toFixed(2) + '%';
+    }
+
+    function updateDOM() {
+      SYMBOLS.forEach(function (short) {
+        var data = cache[short + 'USDT'];
+        if (!data) return;
+        var pct = parseFloat(data.P);
+        var up = pct >= 0;
+        var arrow = up ? '▲' : '▼';
+        var cls = up ? 'up' : 'dn';
+        var priceText = arrow + ' ' + fmt(data.c);
+        var chgText = fmtPct(data.P);
+
+        var items = document.querySelectorAll('[data-sym="' + short + '"]');
+        items.forEach(function (item) {
+          var priceEl = item.querySelector('.ticker-price');
+          var chgEl = item.querySelector('.ticker-chg');
+          if (priceEl) {
+            priceEl.textContent = priceText;
+            priceEl.className = 'ticker-price ' + cls;
+          }
+          if (chgEl) {
+            chgEl.textContent = chgText;
+            chgEl.className = 'ticker-chg ' + cls;
+          }
+        });
+      });
+    }
+
+    function connect() {
+      try { ws = new WebSocket(STREAM_URL); } catch (e) { return; }
+
+      ws.onopen = function () {
+        retryDelay = 2000;
+      };
+
+      ws.onmessage = function (e) {
+        try {
+          var msg = JSON.parse(e.data);
+          if (msg.data && msg.data.s) {
+            cache[msg.data.s] = msg.data;
+          }
+        } catch (_) {}
+      };
+
+      ws.onerror = function () {};
+
+      ws.onclose = function () {
+        ws = null;
+        setTimeout(connect, retryDelay);
+        retryDelay = Math.min(retryDelay * 2, MAX_BACKOFF);
+      };
+    }
+
+    connect();
+    setTimeout(updateDOM, FIRST_UPDATE_DELAY);
+    setInterval(updateDOM, UPDATE_INTERVAL);
+  })();
+  </script>
+
+</body>
+</html>
