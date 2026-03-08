@@ -938,18 +938,12 @@
             <div class="arch-layer-name">Strategy Framework</div>
             <div class="arch-layer-desc">Pluggable algos · Signal generation · Portfolio rebalancing</div>
           </div>
-          <div class="arch-layer-tech">
-            <span class="tech-tag">async</span>
-          </div>
         </div>
         <div class="arch-layer">
           <div class="arch-layer-num">04</div>
           <div class="arch-layer-content">
             <div class="arch-layer-name">Risk Management</div>
             <div class="arch-layer-desc">Position limits · Drawdown controls · Leeson-named guardrails</div>
-          </div>
-          <div class="arch-layer-tech">
-            <span class="tech-tag">decimal</span>
           </div>
         </div>
         <div class="arch-layer">
@@ -958,28 +952,19 @@
             <div class="arch-layer-name">Order Execution</div>
             <div class="arch-layer-desc">Smart routing · Fill simulation · Order lifecycle</div>
           </div>
-          <div class="arch-layer-tech">
-            <span class="tech-tag">tokio</span>
-          </div>
         </div>
         <div class="arch-layer">
           <div class="arch-layer-num">02</div>
           <div class="arch-layer-content">
             <div class="arch-layer-name">Market Data</div>
-            <div class="arch-layer-desc">WebSocket ingestion · Normalised types · Multi-exchange</div>
-          </div>
-          <div class="arch-layer-tech">
-            <span class="tech-tag">tungstenite</span>
+            <div class="arch-layer-desc">Real-time ingestion · Normalised types · Multi-exchange</div>
           </div>
         </div>
         <div class="arch-layer">
           <div class="arch-layer-num">01</div>
           <div class="arch-layer-content">
             <div class="arch-layer-name">Exchange Connectors</div>
-            <div class="arch-layer-desc">Binance · Kraken · Trait-based · Testnet first</div>
-          </div>
-          <div class="arch-layer-tech">
-            <span class="tech-tag">serde</span>
+            <div class="arch-layer-desc">Trait-based · Swappable · Testnet supported</div>
           </div>
         </div>
       </div>
@@ -997,12 +982,12 @@
           <polyline points="2,22 10,14 16,18 24,8 30,12"/>
           <line x1="2" y1="28" x2="30" y2="28"/>
         </svg>
-        <div class="feature-title">Market Data Ingestion</div>
+        <div class="feature-title">Market Data</div>
         <div class="feature-desc">
-          Real-time WebSocket streams with automatic reconnection, health monitoring,
-          and graceful shutdown. Normalised tick types across all exchanges.
+          Real-time price feeds with robust fault tolerance and automatic
+          recovery. Normalised data types across all supported exchanges.
         </div>
-        <div class="feature-tag">tokio-tungstenite · watch channels</div>
+        <div class="feature-tag">multi-exchange · real-time</div>
       </div>
 
       <div class="feature-card" data-num="02">
@@ -1014,10 +999,10 @@
         </svg>
         <div class="feature-title">Strategy Framework</div>
         <div class="feature-desc">
-          Trait-based, swappable strategy components. Buy-and-hold portfolio management
-          and short-term alpha strategies in the same unified interface.
+          Modular, composable strategy components. Portfolio management
+          and active trading strategies share a unified, swappable interface.
         </div>
-        <div class="feature-tag">zero-cost abstractions · trait objects</div>
+        <div class="feature-tag">modular · composable</div>
       </div>
 
       <div class="feature-card" data-num="03">
@@ -1028,10 +1013,10 @@
         </svg>
         <div class="feature-title">Backtesting Engine</div>
         <div class="feature-desc">
-          Historical simulation with realistic fill modelling, slippage, and
-          transaction costs. Polars-powered analytics pipeline.
+          Historical simulation with realistic execution modelling.
+          Validate strategies before they ever touch live capital.
         </div>
-        <div class="feature-tag">polars · event-driven</div>
+        <div class="feature-tag">historical · event-driven</div>
       </div>
 
       <div class="feature-card" data-num="04">
@@ -1041,10 +1026,10 @@
         </svg>
         <div class="feature-title">Risk Management</div>
         <div class="feature-desc">
-          Named after Nick Leeson for a reason. Position limits, drawdown controls,
-          and kill switches enforced at the type level. No unwraps, no surprises.
+          Named after Nick Leeson for a reason. Position limits, exposure
+          controls, and kill switches. No surprises, no exceptions.
         </div>
-        <div class="feature-tag">rust_decimal · thiserror</div>
+        <div class="feature-tag">always on · type-enforced</div>
       </div>
 
       <div class="feature-card" data-num="05">
@@ -1054,12 +1039,13 @@
           <line x1="10" y1="6" x2="10" y2="12"/>
           <line x1="22" y1="6" x2="22" y2="12"/>
         </svg>
-        <div class="feature-title">Event Signal Layer</div>
+        <div class="feature-title">Signal Integration</div>
         <div class="feature-desc">
-          Prediction market data, macro event risk filtering via Kalshi,
-          and LLM-assisted portfolio selection for passive allocation strategies.
+          External data sources feed a layered signal architecture.
+          Strategies remain context-aware without being tightly coupled
+          to any single data provider.
         </div>
-        <div class="feature-tag">kalshi api · regime detection</div>
+        <div class="feature-tag">multi-source · decoupled</div>
       </div>
 
       <div class="feature-card" data-num="06">
@@ -1073,10 +1059,10 @@
         </svg>
         <div class="feature-title">Live Dashboard</div>
         <div class="feature-desc">
-          Dioxus WASM web dashboard for real-time position monitoring,
-          strategy performance, and system health — all from the browser.
+          Browser-based interface for real-time position monitoring,
+          strategy performance, and system health — built in Rust.
         </div>
-        <div class="feature-tag">dioxus · wasm · coming soon</div>
+        <div class="feature-tag">real-time · coming soon</div>
       </div>
     </div>
   </section>
