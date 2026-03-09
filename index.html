@@ -1,1127 +1,872 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>RogueCapital — Algorithmic Trading Infrastructure</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Syne:wght@400;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300&display=swap" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,300;0,400;0,600;0,700;0,800;1,300&family=Barlow+Condensed:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --black: #07080a;
-      --off-black: #0d0f12;
-      --panel: #111318;
-      --border: #1e2128;
-      --border-bright: #2a2f3a;
-      --muted: #3a4050;
-      --text-dim: #6b7385;
-      --text-mid: #9aa0b0;
-      --text: #c8cdd8;
-      --white: #eef0f4;
-      --accent: #c8a96e;
-      --accent-dim: #8a7048;
-      --accent-glow: rgba(200, 169, 110, 0.12);
-      --red: #e05a4e;
-      --green: #4ec994;
-      --mono: 'DM Mono', monospace;
-      --display: 'Syne', sans-serif;
-      --serif: 'Fraunces', serif;
+      --bg:        #13151a;
+      --bg2:       #1a1d24;
+      --panel:     #1e2229;
+      --panel2:    #242830;
+      --border:    #2c3040;
+      --border2:   #363d4e;
+      --muted:     #3d4558;
+      --dim:       #6b7590;
+      --mid:       #9aa3bc;
+      --text:      #d4d9e8;
+      --white:     #eef1f8;
+      --orange:    #f07030;
+      --orange2:   #f5993a;
+      --amber:     #f5c842;
+      --red:       #e8503a;
+      --green:     #3acc8a;
+      --blue:      #4a90d9;
+      --orange-glow: rgba(240,112,48,0.15);
+      --mono: 'JetBrains Mono', monospace;
+      --display: 'Barlow Condensed', sans-serif;
+      --body: 'Barlow', sans-serif;
     }
 
     html { scroll-behavior: smooth; }
 
     body {
-      background: var(--black);
+      background: var(--bg);
       color: var(--text);
-      font-family: var(--mono);
+      font-family: var(--body);
       font-size: 14px;
-      line-height: 1.6;
+      line-height: 1.5;
       overflow-x: hidden;
-      cursor: crosshair;
     }
 
-    /* ─── NOISE OVERLAY ─── */
+    /* ── NOISE ── */
     body::before {
       content: '';
-      position: fixed;
-      inset: 0;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");
-      pointer-events: none;
-      z-index: 9999;
-      opacity: 0.4;
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none; z-index: 9999; opacity: 0.5;
     }
 
-    /* ─── SCANLINE ─── */
-    body::after {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background: repeating-linear-gradient(
-        0deg,
-        transparent,
-        transparent 2px,
-        rgba(0,0,0,0.03) 2px,
-        rgba(0,0,0,0.03) 4px
-      );
-      pointer-events: none;
-      z-index: 9998;
-    }
-
-    /* ─── NAV ─── */
+    /* ── NAV ── */
     nav {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      z-index: 100;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 20px 48px;
+      position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 40px; height: 56px;
+      background: rgba(19,21,26,0.92);
+      backdrop-filter: blur(16px);
       border-bottom: 1px solid var(--border);
-      background: rgba(7, 8, 10, 0.85);
-      backdrop-filter: blur(12px);
     }
 
     .nav-logo {
       font-family: var(--display);
-      font-weight: 800;
-      font-size: 15px;
-      letter-spacing: 0.10em;
-      text-transform: uppercase;
+      font-weight: 800; font-size: 20px;
+      letter-spacing: 0.06em; text-transform: uppercase;
       color: var(--white);
     }
+    .nav-logo span { color: var(--orange); }
 
-    .nav-logo span {
-      color: var(--accent);
-      font-weight: 300;
-      letter-spacing: 0.14em;
-    }
-
-    .nav-links {
-      display: flex;
-      gap: 32px;
-      list-style: none;
-    }
-
+    .nav-links { display: flex; gap: 28px; list-style: none; }
     .nav-links a {
-      color: var(--text-dim);
-      text-decoration: none;
-      font-size: 11px;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      transition: color 0.2s;
+      color: var(--dim); text-decoration: none;
+      font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+      font-weight: 600; transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--orange); }
+
+    .nav-badge {
+      font-family: var(--mono); font-size: 9px;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--orange); border: 1px solid var(--orange);
+      padding: 3px 8px; opacity: 0.8;
     }
 
-    .nav-links a:hover { color: var(--accent); }
-
-    .nav-tag {
-      font-size: 10px;
-      letter-spacing: 0.1em;
-      color: var(--accent-dim);
-      border: 1px solid var(--accent-dim);
-      padding: 3px 8px;
-      text-transform: uppercase;
-    }
-
-    /* ─── TICKER ─── */
-    .ticker-bar {
-      position: fixed;
-      top: 61px;
-      left: 0;
-      right: 0;
-      z-index: 99;
-      height: 28px;
-      background: var(--panel);
+    /* ── TICKER ── */
+    .ticker {
+      position: fixed; top: 56px; left: 0; right: 0; z-index: 199;
+      height: 26px; background: var(--bg2);
       border-bottom: 1px solid var(--border);
-      overflow: hidden;
-      display: flex;
-      align-items: center;
+      overflow: hidden; display: flex; align-items: center;
     }
-
-    .ticker-inner {
-      display: flex;
-      gap: 48px;
-      white-space: nowrap;
-      animation: ticker 40s linear infinite;
-      font-size: 10px;
-      letter-spacing: 0.08em;
-      color: var(--text-dim);
+    .ticker-track {
+      display: flex; gap: 40px; white-space: nowrap;
+      animation: ticker 35s linear infinite;
+      font-family: var(--mono); font-size: 10px; letter-spacing: 0.06em;
     }
+    .t-item { display: flex; gap: 8px; }
+    .t-sym { color: var(--mid); }
+    .t-up { color: var(--green); }
+    .t-dn { color: var(--red); }
+    .t-sep { color: var(--muted); }
+    @keyframes ticker { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
 
-    .ticker-item { display: flex; gap: 8px; align-items: center; }
-    .ticker-item .sym { color: var(--text-mid); }
-    .ticker-item .up, .ticker-item .ticker-price.up, .ticker-item .ticker-chg.up { color: var(--green); }
-    .ticker-item .dn, .ticker-item .ticker-price.dn, .ticker-item .ticker-chg.dn { color: var(--red); }
-
-    @keyframes ticker {
-      0% { transform: translateX(0); }
-      100% { transform: translateX(-50%); }
-    }
-
-    /* ─── HERO ─── */
+    /* ── HERO ── */
     .hero {
       min-height: 100vh;
-      padding: 160px 48px 80px;
+      padding: 120px 40px 60px;
       display: grid;
-      grid-template-columns: 1fr 420px;
-      gap: 80px;
-      align-items: center;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto auto;
+      gap: 20px;
       position: relative;
     }
 
     .hero-bg {
-      position: absolute;
-      inset: 0;
-      overflow: hidden;
-      pointer-events: none;
+      position: absolute; inset: 0; pointer-events: none; overflow: hidden;
     }
-
     .hero-grid {
-      position: absolute;
-      inset: 0;
+      position: absolute; inset: 0;
       background-image:
         linear-gradient(var(--border) 1px, transparent 1px),
         linear-gradient(90deg, var(--border) 1px, transparent 1px);
-      background-size: 60px 60px;
-      mask-image: radial-gradient(ellipse 80% 70% at 60% 50%, black 0%, transparent 70%);
-      opacity: 0.4;
+      background-size: 48px 48px;
+      opacity: 0.25;
+      mask-image: radial-gradient(ellipse 90% 80% at 50% 40%, black, transparent);
     }
-
     .hero-glow {
-      position: absolute;
-      width: 600px;
-      height: 600px;
-      right: 5%;
-      top: 20%;
-      background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
-      filter: blur(40px);
+      position: absolute; width: 700px; height: 400px;
+      top: 10%; left: 50%; transform: translateX(-50%);
+      background: radial-gradient(ellipse, var(--orange-glow), transparent 70%);
+      filter: blur(60px);
     }
 
-    .hero-glow-2 {
-      position: absolute;
-      width: 300px;
-      height: 300px;
-      left: 15%;
-      bottom: 10%;
-      background: radial-gradient(circle, rgba(78, 201, 148, 0.06) 0%, transparent 70%);
-      filter: blur(30px);
+    /* hero left — headline */
+    .hero-hl {
+      grid-column: 1; grid-row: 1;
+      display: flex; flex-direction: column; justify-content: center;
+      position: relative; z-index: 1; padding-right: 40px;
     }
-
-    .hero-content { position: relative; z-index: 1; }
 
     .hero-eyebrow {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 32px;
-      font-size: 10px;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      color: var(--accent);
+      display: flex; align-items: center; gap: 10px;
+      font-family: var(--mono); font-size: 10px; letter-spacing: 0.18em;
+      text-transform: uppercase; color: var(--orange); margin-bottom: 24px;
     }
-
     .hero-eyebrow::before {
-      content: '';
-      display: block;
-      width: 32px;
-      height: 1px;
-      background: var(--accent);
+      content: ''; display: block; width: 24px; height: 1px; background: var(--orange);
     }
 
     h1 {
-      font-family: var(--display);
-      font-weight: 800;
-      font-size: clamp(48px, 6vw, 80px);
-      line-height: 0.95;
-      letter-spacing: -0.02em;
-      color: var(--white);
-      margin-bottom: 8px;
+      font-family: var(--display); font-weight: 800;
+      font-size: clamp(52px, 6.5vw, 88px);
+      line-height: 0.92; letter-spacing: -0.01em;
+      color: var(--white); margin-bottom: 24px;
+      text-transform: uppercase;
     }
-
     h1 em {
-      font-family: var(--serif);
-      font-style: italic;
-      font-weight: 300;
-      color: var(--accent);
+      font-style: italic; font-weight: 300;
+      color: var(--orange); text-transform: none;
+      font-family: var(--body);
     }
 
     .hero-sub {
-      font-family: var(--serif);
-      font-style: italic;
+      font-size: 16px; color: var(--mid);
+      max-width: 440px; line-height: 1.6; margin-bottom: 36px;
       font-weight: 300;
-      font-size: clamp(16px, 2vw, 22px);
-      color: var(--text-mid);
-      margin: 24px 0 48px;
-      max-width: 520px;
-      line-height: 1.5;
     }
 
-    .hero-cta {
-      display: flex;
-      gap: 16px;
-      align-items: center;
-    }
+    .hero-cta { display: flex; gap: 12px; }
 
     .btn-primary {
-      background: var(--accent);
-      color: var(--black);
-      border: none;
-      padding: 12px 28px;
-      font-family: var(--mono);
-      font-size: 11px;
-      font-weight: 500;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      cursor: pointer;
-      text-decoration: none;
-      transition: all 0.2s;
-      display: inline-block;
+      background: var(--orange); color: var(--bg);
+      border: none; padding: 11px 26px;
+      font-family: var(--display); font-size: 13px; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      cursor: pointer; text-decoration: none; display: inline-block;
+      transition: all 0.2s; clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
     }
-
-    .btn-primary:hover {
-      background: var(--white);
-      transform: translateY(-1px);
-    }
+    .btn-primary:hover { background: var(--orange2); transform: translateY(-1px); }
 
     .btn-ghost {
-      background: transparent;
-      color: var(--text-mid);
-      border: 1px solid var(--border-bright);
-      padding: 11px 28px;
-      font-family: var(--mono);
-      font-size: 11px;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      cursor: pointer;
-      text-decoration: none;
+      background: transparent; color: var(--mid);
+      border: 1px solid var(--border2); padding: 10px 26px;
+      font-family: var(--display); font-size: 13px; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      cursor: pointer; text-decoration: none; display: inline-block;
       transition: all 0.2s;
-      display: inline-block;
+    }
+    .btn-ghost:hover { border-color: var(--orange); color: var(--orange); }
+
+    /* hero right — main dashboard panel */
+    .hero-panel {
+      grid-column: 2; grid-row: 1 / 3;
+      position: relative; z-index: 1;
+      display: flex; flex-direction: column; gap: 12px;
     }
 
-    .btn-ghost:hover {
-      border-color: var(--accent);
-      color: var(--accent);
+    /* hero bottom — mini stat cards */
+    .hero-stats {
+      grid-column: 1; grid-row: 2;
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 12px; position: relative; z-index: 1;
+      align-content: start;
     }
 
-    /* ─── TERMINAL CARD ─── */
-    .terminal {
-      position: relative;
-      z-index: 1;
+    /* ── PANEL COMPONENT ── */
+    .panel {
       background: var(--panel);
-      border: 1px solid var(--border-bright);
+      border: 1px solid var(--border);
       overflow: hidden;
     }
 
-    .terminal-bar {
-      display: flex;
-      align-items: center;
-      gap: 8px;
+    .panel-header {
+      display: flex; align-items: center; justify-content: space-between;
       padding: 10px 14px;
-      background: var(--off-black);
+      background: var(--bg2);
       border-bottom: 1px solid var(--border);
     }
 
-    .terminal-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-    }
-    .terminal-dot:nth-child(1) { background: #e05a4e; }
-    .terminal-dot:nth-child(2) { background: #c8a96e; }
-    .terminal-dot:nth-child(3) { background: #4ec994; }
-
-    .terminal-title {
-      margin-left: 8px;
-      font-size: 10px;
-      color: var(--text-dim);
-      letter-spacing: 0.08em;
+    .panel-title {
+      font-family: var(--display); font-size: 11px; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase; color: var(--mid);
     }
 
-    .terminal-body {
-      padding: 20px;
-      font-size: 11px;
-      line-height: 1.8;
+    .panel-badge {
+      font-family: var(--mono); font-size: 9px; letter-spacing: 0.08em;
+      color: var(--green); display: flex; align-items: center; gap: 4px;
     }
-
-    .t-comment { color: var(--muted); }
-    .t-keyword { color: var(--accent); }
-    .t-type { color: #7eb8d4; }
-    .t-string { color: var(--green); }
-    .t-num { color: #d49a6a; }
-    .t-fn { color: #c792ea; }
-    .t-indent { padding-left: 20px; }
-    .t-indent2 { padding-left: 40px; }
-
-    .t-cursor {
-      display: inline-block;
-      width: 7px;
-      height: 13px;
-      background: var(--accent);
-      animation: blink 1.2s step-end infinite;
-      vertical-align: text-bottom;
+    .panel-badge::before {
+      content: ''; display: block; width: 5px; height: 5px;
+      border-radius: 50%; background: var(--green);
+      animation: pulse 2s ease-in-out infinite;
     }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
-    @keyframes blink {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0; }
-    }
+    /* ── MAIN CHART PANEL ── */
+    .chart-panel { flex: 1; }
+    .chart-panel .panel-body { padding: 16px; }
 
-    .terminal-metrics {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1px;
-      background: var(--border);
-      border-top: 1px solid var(--border);
-    }
-
-    .metric-cell {
-      background: var(--panel);
-      padding: 12px 16px;
-    }
-
-    .metric-label {
-      font-size: 9px;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--text-dim);
-      margin-bottom: 4px;
-    }
-
-    .metric-value {
-      font-size: 16px;
-      font-weight: 500;
-      color: var(--white);
-    }
-
-    .metric-value.up { color: var(--green); }
-    .metric-value.dn { color: var(--red); }
-
-    /* ─── STATS BAR ─── */
-    .stats-bar {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      border-top: 1px solid var(--border);
+    .chart-metrics {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 1px; background: var(--border);
       border-bottom: 1px solid var(--border);
-      background: var(--panel);
-    }
-
-    .stat-cell {
-      padding: 32px 48px;
-      border-right: 1px solid var(--border);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .stat-cell:last-child { border-right: none; }
-
-    .stat-num {
-      font-family: var(--display);
-      font-weight: 700;
-      font-size: 36px;
-      color: var(--white);
-      line-height: 1;
-      margin-bottom: 8px;
-    }
-
-    .stat-num span { color: var(--accent); }
-
-    .stat-label {
-      font-size: 10px;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--text-dim);
-    }
-
-    .stat-cell::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 2px;
-      background: linear-gradient(90deg, var(--accent), transparent);
-      transform: scaleX(0);
-      transform-origin: left;
-      transition: transform 0.4s ease;
-    }
-
-    .stat-cell:hover::after { transform: scaleX(1); }
-
-    /* ─── SECTION ─── */
-    section {
-      padding: 100px 48px;
-    }
-
-    .section-label {
-      font-size: 10px;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      color: var(--accent);
       margin-bottom: 16px;
-      display: flex;
-      align-items: center;
+    }
+    .chart-metric {
+      background: var(--panel); padding: 10px 14px;
+    }
+    .chart-metric-label {
+      font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--dim); margin-bottom: 4px;
+    }
+    .chart-metric-val {
+      font-family: var(--display); font-weight: 700; font-size: 20px;
+      color: var(--white); line-height: 1;
+    }
+    .chart-metric-val.up { color: var(--green); }
+    .chart-metric-val.dn { color: var(--red); }
+    .chart-metric-val.or { color: var(--orange); }
+
+    .chart-wrap { position: relative; height: 160px; }
+
+    /* ── MINI PANELS ROW ── */
+    .mini-row {
+      display: grid; grid-template-columns: 1fr 1fr;
       gap: 12px;
     }
 
-    .section-label::before {
-      content: '';
-      display: block;
-      width: 20px;
-      height: 1px;
-      background: var(--accent);
+    /* gauge */
+    .gauge-wrap {
+      display: flex; align-items: center; justify-content: center;
+      padding: 16px; gap: 16px;
+    }
+    .gauge-svg { flex-shrink: 0; }
+    .gauge-info { flex: 1; }
+    .gauge-val {
+      font-family: var(--display); font-weight: 800; font-size: 28px;
+      color: var(--white); line-height: 1;
+    }
+    .gauge-label {
+      font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--dim); margin-top: 4px;
+    }
+    .gauge-sub {
+      font-size: 11px; color: var(--orange); margin-top: 6px; font-weight: 600;
+    }
+
+    /* activity list */
+    .activity-list { padding: 8px 0; }
+    .activity-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 7px 14px;
+      border-bottom: 1px solid var(--border);
+      transition: background 0.15s;
+    }
+    .activity-item:last-child { border-bottom: none; }
+    .activity-item:hover { background: var(--panel2); }
+    .activity-dot {
+      width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+    }
+    .activity-sym {
+      font-family: var(--mono); font-size: 10px; font-weight: 500;
+      color: var(--white); width: 60px; flex-shrink: 0;
+    }
+    .activity-desc { font-size: 11px; color: var(--dim); flex: 1; }
+    .activity-val {
+      font-family: var(--mono); font-size: 10px; font-weight: 500;
+    }
+    .activity-val.up { color: var(--green); }
+    .activity-val.dn { color: var(--red); }
+
+    /* ── HERO STAT CARDS ── */
+    .stat-card {
+      background: var(--panel); border: 1px solid var(--border);
+      padding: 16px; position: relative; overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    .stat-card:hover { border-color: var(--orange); }
+    .stat-card::after {
+      content: ''; position: absolute; bottom: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--orange), transparent);
+      transform: scaleX(0); transform-origin: left;
+      transition: transform 0.3s;
+    }
+    .stat-card:hover::after { transform: scaleX(1); }
+    .stat-card-num {
+      font-family: var(--display); font-weight: 800; font-size: 30px;
+      color: var(--white); line-height: 1; margin-bottom: 4px;
+    }
+    .stat-card-num span { color: var(--orange); }
+    .stat-card-label {
+      font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--dim);
+    }
+
+    /* ── STATS BAR ── */
+    .stats-bar {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      background: var(--bg2);
+    }
+    .stats-cell {
+      padding: 28px 40px; border-right: 1px solid var(--border);
+      position: relative; overflow: hidden;
+    }
+    .stats-cell:last-child { border-right: none; }
+    .stats-num {
+      font-family: var(--display); font-weight: 800; font-size: 40px;
+      color: var(--white); line-height: 1; margin-bottom: 6px;
+    }
+    .stats-num span { color: var(--orange); }
+    .stats-label {
+      font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--dim);
+    }
+    .stats-cell::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0;
+      height: 2px; background: linear-gradient(90deg, var(--orange), transparent);
+    }
+
+    /* ── SECTION ── */
+    section { padding: 80px 40px; }
+
+    .section-eyebrow {
+      display: flex; align-items: center; gap: 10px;
+      font-family: var(--mono); font-size: 10px; letter-spacing: 0.18em;
+      text-transform: uppercase; color: var(--orange); margin-bottom: 16px;
+    }
+    .section-eyebrow::before {
+      content: ''; display: block; width: 20px; height: 1px; background: var(--orange);
     }
 
     h2 {
-      font-family: var(--display);
-      font-weight: 700;
-      font-size: clamp(32px, 4vw, 48px);
-      line-height: 1.05;
-      color: var(--white);
-      margin-bottom: 16px;
-      letter-spacing: -0.02em;
+      font-family: var(--display); font-weight: 800;
+      font-size: clamp(32px, 4vw, 52px);
+      line-height: 0.95; color: var(--white);
+      letter-spacing: -0.01em; text-transform: uppercase; margin-bottom: 8px;
     }
-
     h2 em {
-      font-family: var(--serif);
-      font-style: italic;
-      font-weight: 300;
-      color: var(--text-mid);
+      font-style: italic; font-weight: 300;
+      color: var(--dim); font-family: var(--body); text-transform: none;
     }
 
-    /* ─── ARCHITECTURE SECTION ─── */
-    .arch-section {
-      background: var(--off-black);
-      border-top: 1px solid var(--border);
-      border-bottom: 1px solid var(--border);
-    }
-
-    .arch-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 80px;
-      align-items: start;
-      margin-top: 64px;
-    }
+    /* ── ARCH SECTION ── */
+    .arch { background: var(--bg2); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+    .arch-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; margin-top: 48px; }
 
     .arch-desc {
-      color: var(--text-mid);
-      font-family: var(--serif);
-      font-style: italic;
-      font-weight: 300;
-      font-size: 17px;
-      line-height: 1.7;
-      max-width: 480px;
-      margin-bottom: 40px;
+      font-size: 16px; color: var(--mid); font-weight: 300;
+      line-height: 1.65; max-width: 440px; margin-bottom: 32px;
     }
 
-    .arch-stack {
-      display: flex;
-      flex-direction: column;
-      gap: 0;
+    .arch-stack { display: flex; flex-direction: column; }
+    .arch-row {
+      display: flex; align-items: stretch;
+      border: 1px solid var(--border); margin-bottom: -1px;
+      transition: all 0.2s; cursor: default;
     }
-
-    .arch-layer {
-      display: flex;
-      align-items: stretch;
-      border: 1px solid var(--border);
-      margin-bottom: -1px;
-      transition: background 0.2s, border-color 0.2s;
-      cursor: default;
+    .arch-row:hover {
+      background: rgba(240,112,48,0.04);
+      border-color: var(--orange); z-index: 1;
     }
-
-    .arch-layer:hover {
-      background: rgba(200, 169, 110, 0.04);
-      border-color: var(--accent-dim);
-      z-index: 1;
+    .arch-num {
+      width: 44px; display: flex; align-items: center; justify-content: center;
+      background: var(--bg); border-right: 1px solid var(--border);
+      font-family: var(--mono); font-size: 10px; color: var(--muted); flex-shrink: 0;
     }
-
-    .arch-layer-num {
-      width: 48px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: var(--panel);
-      border-right: 1px solid var(--border);
-      font-size: 10px;
-      color: var(--muted);
-      flex-shrink: 0;
+    .arch-content { padding: 14px 18px; flex: 1; }
+    .arch-name {
+      font-family: var(--display); font-size: 13px; font-weight: 700;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--text); margin-bottom: 3px;
     }
+    .arch-desc2 { font-size: 11px; color: var(--dim); }
+    .arch-row:hover .arch-name { color: var(--orange); }
 
-    .arch-layer-content {
-      padding: 16px 20px;
-      flex: 1;
-    }
-
-    .arch-layer-name {
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--text);
-      letter-spacing: 0.06em;
-      margin-bottom: 4px;
-    }
-
-    .arch-layer-desc {
-      font-size: 10px;
-      color: var(--text-dim);
-      letter-spacing: 0.04em;
-    }
-
-    .arch-layer-tech {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 0 16px;
-      flex-shrink: 0;
-    }
-
-    .tech-tag {
-      font-size: 9px;
-      letter-spacing: 0.08em;
-      color: var(--accent-dim);
-      border: 1px solid var(--accent-dim);
-      padding: 2px 6px;
-      text-transform: uppercase;
-    }
-
-    /* ─── FEATURES ─── */
+    /* ── FEATURES ── */
     .features-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 1px;
-      background: var(--border);
-      margin-top: 64px;
-      border: 1px solid var(--border);
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 1px; background: var(--border);
+      border: 1px solid var(--border); margin-top: 48px;
     }
-
-    .feature-card {
-      background: var(--off-black);
-      padding: 40px;
-      position: relative;
-      overflow: hidden;
-      transition: background 0.3s;
+    .feat {
+      background: var(--bg2); padding: 32px;
+      position: relative; overflow: hidden; transition: background 0.2s;
     }
-
-    .feature-card:hover {
-      background: var(--panel);
-    }
-
-    .feature-card::before {
-      content: attr(data-num);
-      position: absolute;
-      top: -10px;
-      right: 20px;
-      font-family: var(--display);
-      font-weight: 800;
-      font-size: 80px;
-      color: var(--border);
-      line-height: 1;
-      pointer-events: none;
-      transition: color 0.3s;
-    }
-
-    .feature-card:hover::before {
-      color: var(--border-bright);
-    }
-
-    .feature-icon {
-      width: 32px;
-      height: 32px;
-      margin-bottom: 24px;
-      color: var(--accent);
-    }
-
-    .feature-title {
-      font-family: var(--display);
-      font-weight: 600;
-      font-size: 16px;
-      color: var(--white);
-      margin-bottom: 12px;
-      letter-spacing: -0.01em;
-    }
-
-    .feature-desc {
-      font-size: 12px;
-      color: var(--text-dim);
-      line-height: 1.7;
-    }
-
-    .feature-tag {
-      margin-top: 20px;
-      font-size: 9px;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--accent-dim);
-    }
-
-    /* ─── PHILOSOPHY ─── */
-    .philosophy {
-      background: var(--black);
-      border-top: 1px solid var(--border);
-    }
-
-    .philosophy-content {
-      max-width: 800px;
-      margin: 0 auto;
-      text-align: center;
-    }
-
-    .philosophy-quote {
-      font-family: var(--serif);
-      font-style: italic;
-      font-weight: 300;
-      font-size: clamp(22px, 3vw, 36px);
-      color: var(--text-mid);
-      line-height: 1.4;
-      margin: 48px 0;
-    }
-
-    .philosophy-quote strong {
-      font-style: normal;
-      font-weight: 400;
-      color: var(--white);
-    }
-
-    .philosophy-attr {
-      font-size: 10px;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: var(--muted);
-    }
-
-    /* ─── LEESON NOTE ─── */
-    .leeson-bar {
-      background: var(--panel);
-      border-top: 1px solid var(--border);
-      border-bottom: 1px solid var(--border);
-      padding: 20px 48px;
-      display: flex;
-      align-items: center;
-      gap: 16px;
-    }
-
-    .leeson-label {
-      font-size: 9px;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: var(--red);
-      flex-shrink: 0;
-    }
-
-    .leeson-text {
-      font-size: 11px;
-      color: var(--text-dim);
-    }
-
-    .leeson-text strong { color: var(--text-mid); }
-
-    /* ─── FOOTER ─── */
-    footer {
-      padding: 48px;
-      border-top: 1px solid var(--border);
-      display: grid;
-      grid-template-columns: 1fr auto;
-      align-items: end;
-      gap: 40px;
-    }
-
-    .footer-logo {
-      font-family: var(--display);
-      font-weight: 800;
-      font-size: 14px;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--text-dim);
-      margin-bottom: 8px;
-    }
-
-    .footer-logo span { color: var(--accent); }
-
-    .footer-sub {
-      font-size: 10px;
-      color: var(--muted);
-      letter-spacing: 0.06em;
-    }
-
-    .footer-links {
-      display: flex;
-      gap: 24px;
-    }
-
-    .footer-links a {
-      font-size: 10px;
-      color: var(--muted);
-      text-decoration: none;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
+    .feat:hover { background: var(--panel); }
+    .feat::before {
+      content: attr(data-n); position: absolute;
+      top: -8px; right: 16px;
+      font-family: var(--display); font-weight: 800; font-size: 72px;
+      color: var(--border); line-height: 1; pointer-events: none;
       transition: color 0.2s;
     }
-
-    .footer-links a:hover { color: var(--accent); }
-
-    /* ─── ANIMATIONS ─── */
-    .fade-in {
-      opacity: 0;
-      transform: translateY(20px);
-      animation: fadeIn 0.8s ease forwards;
+    .feat:hover::before { color: var(--border2); }
+    .feat-icon { color: var(--orange); width: 28px; height: 28px; margin-bottom: 20px; }
+    .feat-title {
+      font-family: var(--display); font-weight: 700; font-size: 15px;
+      text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--white); margin-bottom: 10px;
+    }
+    .feat-desc { font-size: 12px; color: var(--dim); line-height: 1.65; }
+    .feat-tag {
+      margin-top: 16px; font-family: var(--mono); font-size: 9px;
+      letter-spacing: 0.1em; text-transform: uppercase; color: var(--orange);
+      opacity: 0.6;
     }
 
-    @keyframes fadeIn {
-      to { opacity: 1; transform: translateY(0); }
+    /* ── PHILOSOPHY ── */
+    .philosophy { background: var(--bg); border-top: 1px solid var(--border); text-align: center; }
+    .phil-rule { width: 1px; height: 48px; background: linear-gradient(var(--orange), transparent); margin: 0 auto 32px; }
+    .phil-quote {
+      font-family: var(--body); font-style: italic; font-weight: 300;
+      font-size: clamp(20px, 2.5vw, 30px); color: var(--mid);
+      line-height: 1.5; max-width: 760px; margin: 32px auto;
+    }
+    .phil-quote strong { font-style: normal; font-weight: 600; color: var(--white); }
+    .phil-attr {
+      font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em;
+      text-transform: uppercase; color: var(--muted);
     }
 
-    .fade-in:nth-child(1) { animation-delay: 0.1s; }
-    .fade-in:nth-child(2) { animation-delay: 0.2s; }
-    .fade-in:nth-child(3) { animation-delay: 0.35s; }
-    .fade-in:nth-child(4) { animation-delay: 0.5s; }
-
-    /* vertical rule accent */
-    .v-rule {
-      width: 1px;
-      background: linear-gradient(to bottom, var(--accent), transparent);
-      height: 60px;
-      margin: 0 auto 32px;
+    /* ── DISCLAIMER ── */
+    .disclaimer {
+      background: var(--bg2); border-top: 1px solid var(--border);
+      padding: 16px 40px; display: flex; align-items: center; gap: 14px;
     }
+    .disc-label {
+      font-family: var(--mono); font-size: 9px; letter-spacing: 0.14em;
+      text-transform: uppercase; color: var(--red); flex-shrink: 0;
+    }
+    .disc-text { font-size: 11px; color: var(--dim); }
+    .disc-text strong { color: var(--mid); }
+
+    /* ── FOOTER ── */
+    footer {
+      padding: 36px 40px; border-top: 1px solid var(--border);
+      display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 32px;
+    }
+    .footer-logo {
+      font-family: var(--display); font-weight: 800; font-size: 13px;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--dim); margin-bottom: 6px;
+    }
+    .footer-logo span { color: var(--orange); opacity: 0.6; }
+    .footer-sub { font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 0.06em; }
+    .footer-links { display: flex; gap: 20px; }
+    .footer-links a {
+      font-family: var(--mono); font-size: 10px; color: var(--muted);
+      text-decoration: none; letter-spacing: 0.08em; text-transform: uppercase;
+      transition: color 0.2s;
+    }
+    .footer-links a:hover { color: var(--orange); }
+
+    /* ── ANIM ── */
+    .fade { opacity: 0; transform: translateY(16px); animation: fadeUp 0.7s ease forwards; }
+    @keyframes fadeUp { to { opacity:1; transform:translateY(0); } }
+    .fade:nth-child(1){animation-delay:0.05s}
+    .fade:nth-child(2){animation-delay:0.15s}
+    .fade:nth-child(3){animation-delay:0.28s}
+    .fade:nth-child(4){animation-delay:0.42s}
+    .fade:nth-child(5){animation-delay:0.55s}
   </style>
 </head>
 <body>
 
-  <!-- NAV -->
-  <nav>
-    <div class="nav-logo">ROGUE<span>CAPITAL</span></div>
-    <ul class="nav-links">
-      <li><a href="#architecture">Architecture</a></li>
-      <li><a href="#features">Features</a></li>
-      <li><a href="#philosophy">Philosophy</a></li>
-    </ul>
-    <div class="nav-tag">Alpha Build</div>
-  </nav>
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">ROGUE<span>CAPITAL</span></div>
+  <ul class="nav-links">
+    <li><a href="#architecture">Architecture</a></li>
+    <li><a href="#features">Features</a></li>
+    <li><a href="#philosophy">Philosophy</a></li>
+  </ul>
+  <div class="nav-badge">Alpha Build</div>
+</nav>
 
-  <!-- TICKER -->
-  <div class="ticker-bar">
-    <div class="ticker-inner">
-      <span class="ticker-item" data-sym="BTC"><span class="sym">BTC/USDT</span><span class="ticker-price">—</span><span class="ticker-chg">—</span></span>
-      <span class="ticker-item" data-sym="ETH"><span class="sym">ETH/USDT</span><span class="ticker-price">—</span><span class="ticker-chg">—</span></span>
-      <span class="ticker-item" data-sym="SOL"><span class="sym">SOL/USDT</span><span class="ticker-price">—</span><span class="ticker-chg">—</span></span>
-      <span class="ticker-item" data-sym="BNB"><span class="sym">BNB/USDT</span><span class="ticker-price">—</span><span class="ticker-chg">—</span></span>
-      <span class="ticker-item" data-sym="AVAX"><span class="sym">AVAX/USDT</span><span class="ticker-price">—</span><span class="ticker-chg">—</span></span>
-      <span class="ticker-item"><span class="sym">LATENCY</span><span class="up">0.38ms</span></span>
-      <span class="ticker-item"><span class="sym">STRATEGIES</span><span>4 ACTIVE</span></span>
-      <!-- duplicate for seamless loop -->
-      <span class="ticker-item" data-sym="BTC"><span class="sym">BTC/USDT</span><span class="ticker-price">—</span><span class="ticker-chg">—</span></span>
-      <span class="ticker-item" data-sym="ETH"><span class="sym">ETH/USDT</span><span class="ticker-price">—</span><span class="ticker-chg">—</span></span>
-      <span class="ticker-item" data-sym="SOL"><span class="sym">SOL/USDT</span><span class="ticker-price">—</span><span class="ticker-chg">—</span></span>
-      <span class="ticker-item" data-sym="BNB"><span class="sym">BNB/USDT</span><span class="ticker-price">—</span><span class="ticker-chg">—</span></span>
-      <span class="ticker-item" data-sym="AVAX"><span class="sym">AVAX/USDT</span><span class="ticker-price">—</span><span class="ticker-chg">—</span></span>
-      <span class="ticker-item"><span class="sym">LATENCY</span><span class="up">0.38ms</span></span>
-      <span class="ticker-item"><span class="sym">STRATEGIES</span><span>4 ACTIVE</span></span>
+<!-- TICKER -->
+<div class="ticker">
+  <div class="ticker-track">
+    <span class="t-item" data-sym="BTC"><span class="t-sym">BTC/USDT</span><span class="t-price">—</span><span class="t-chg">—</span></span>
+    <span class="t-sep">│</span>
+    <span class="t-item" data-sym="ETH"><span class="t-sym">ETH/USDT</span><span class="t-price">—</span><span class="t-chg">—</span></span>
+    <span class="t-sep">│</span>
+    <span class="t-item" data-sym="SOL"><span class="t-sym">SOL/USDT</span><span class="t-price">—</span><span class="t-chg">—</span></span>
+    <span class="t-sep">│</span>
+    <span class="t-item" data-sym="BNB"><span class="t-sym">BNB/USDT</span><span class="t-price">—</span><span class="t-chg">—</span></span>
+    <span class="t-sep">│</span>
+    <span class="t-item" data-sym="AVAX"><span class="t-sym">AVAX/USDT</span><span class="t-price">—</span><span class="t-chg">—</span></span>
+    <span class="t-sep">│</span>
+    <span class="t-item"><span class="t-sym">LATENCY</span><span class="t-up">0.38ms</span></span>
+    <span class="t-sep">│</span>
+    <span class="t-item"><span class="t-sym">STRATEGIES</span><span>4 ACTIVE</span></span>
+    <span class="t-sep">│</span>
+    <!-- duplicate for seamless loop -->
+    <span class="t-item" data-sym="BTC"><span class="t-sym">BTC/USDT</span><span class="t-price">—</span><span class="t-chg">—</span></span>
+    <span class="t-sep">│</span>
+    <span class="t-item" data-sym="ETH"><span class="t-sym">ETH/USDT</span><span class="t-price">—</span><span class="t-chg">—</span></span>
+    <span class="t-sep">│</span>
+    <span class="t-item" data-sym="SOL"><span class="t-sym">SOL/USDT</span><span class="t-price">—</span><span class="t-chg">—</span></span>
+    <span class="t-sep">│</span>
+    <span class="t-item" data-sym="BNB"><span class="t-sym">BNB/USDT</span><span class="t-price">—</span><span class="t-chg">—</span></span>
+    <span class="t-sep">│</span>
+    <span class="t-item" data-sym="AVAX"><span class="t-sym">AVAX/USDT</span><span class="t-price">—</span><span class="t-chg">—</span></span>
+    <span class="t-sep">│</span>
+    <span class="t-item"><span class="t-sym">LATENCY</span><span class="t-up">0.38ms</span></span>
+    <span class="t-sep">│</span>
+    <span class="t-item"><span class="t-sym">STRATEGIES</span><span>4 ACTIVE</span></span>
+  </div>
+</div>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"><div class="hero-grid"></div><div class="hero-glow"></div></div>
+
+  <!-- Headline -->
+  <div class="hero-hl">
+    <div class="hero-eyebrow fade">Algorithmic Trading Infrastructure</div>
+    <h1 class="fade">BUILT<br/>TO <em>trade</em><br/>HARD.</h1>
+    <p class="hero-sub fade">Production-grade algorithmic trading infrastructure built in Rust. Sub-millisecond execution. Systematic risk controls. Named after the lessons that count.</p>
+    <div class="hero-cta fade">
+      <a href="#architecture" class="btn-primary">View Architecture</a>
+      <a href="https://github.com/RogueCapital" class="btn-ghost">GitHub →</a>
     </div>
   </div>
 
-  <!-- HERO -->
-  <section class="hero">
-    <div class="hero-bg">
-      <div class="hero-grid"></div>
-      <div class="hero-glow"></div>
-      <div class="hero-glow-2"></div>
+  <!-- Dashboard panel right -->
+  <div class="hero-panel fade">
+
+    <!-- Main chart panel -->
+    <div class="panel chart-panel">
+      <div class="panel-header">
+        <span class="panel-title">Portfolio Performance</span>
+        <span class="panel-badge">Live</span>
+      </div>
+      <div class="panel-body">
+        <div class="chart-metrics">
+          <div class="chart-metric">
+            <div class="chart-metric-label">Sharpe</div>
+            <div class="chart-metric-val up">2.41</div>
+          </div>
+          <div class="chart-metric">
+            <div class="chart-metric-label">Drawdown</div>
+            <div class="chart-metric-val dn">-4.2%</div>
+          </div>
+          <div class="chart-metric">
+            <div class="chart-metric-label">Win Rate</div>
+            <div class="chart-metric-val or">58.3%</div>
+          </div>
+          <div class="chart-metric">
+            <div class="chart-metric-label">Latency</div>
+            <div class="chart-metric-val up">0.38ms</div>
+          </div>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="heroChart"></canvas>
+        </div>
+      </div>
     </div>
 
-    <div class="hero-content">
-      <div class="hero-eyebrow fade-in">Algorithmic Trading Infrastructure</div>
-      <h1 class="fade-in">
-        Trade<br/>
-        <em>without</em><br/>
-        mercy.
-      </h1>
-      <p class="hero-sub fade-in">
-        Production-grade algorithmic trading infrastructure built in Rust.
-        Sub-millisecond execution. Zero-cost abstractions. Systematic risk controls
-        named after the lessons that count.
-      </p>
-      <div class="hero-cta fade-in">
-        <a href="#architecture" class="btn-primary">View Architecture</a>
-        <a href="https://github.com/RogueCapital" class="btn-ghost">GitHub →</a>
-      </div>
-    </div>
+    <!-- Mini row -->
+    <div class="mini-row">
 
-    <!-- TERMINAL -->
-    <div class="terminal fade-in">
-      <div class="terminal-bar">
-        <div class="terminal-dot"></div>
-        <div class="terminal-dot"></div>
-        <div class="terminal-dot"></div>
-        <span class="terminal-title">strategy/momentum.rs</span>
-      </div>
-      <div class="terminal-body">
-        <div class="t-comment">// RogueCapital — Strategy Core</div>
-        <div class="t-comment">// Built with discipline. Named without it.</div>
-        <br/>
-        <div><span class="t-keyword">pub struct</span> <span class="t-type">MomentumStrategy</span> {</div>
-        <div class="t-indent"><span class="t-keyword">pub</span> lookback: <span class="t-type">usize</span>,</div>
-        <div class="t-indent">risk_limit: <span class="t-type">RiskBudget</span>,</div>
-        <div class="t-indent">signal_threshold: <span class="t-type">Decimal</span>,</div>
-        <div>}</div>
-        <br/>
-        <div><span class="t-keyword">impl</span> <span class="t-type">Strategy</span> <span class="t-keyword">for</span> <span class="t-type">MomentumStrategy</span> {</div>
-        <div class="t-indent"><span class="t-keyword">fn</span> <span class="t-fn">on_tick</span>(&<span class="t-keyword">mut</span> self, tick: <span class="t-type">Tick</span>)</div>
-        <div class="t-indent">  -> <span class="t-type">Result</span>&lt;<span class="t-type">Signal</span>, <span class="t-type">StrategyError</span>&gt;</div>
-        <div class="t-indent">{</div>
-        <div class="t-indent2"><span class="t-comment">// compute signal...</span></div>
-        <div class="t-indent2"><span class="t-type">Ok</span>(<span class="t-type">Signal</span>::<span class="t-fn">Long</span> { size })</div>
-        <div class="t-indent">}</div>
-        <div>}</div>
-        <br/>
-        <div><span class="t-comment">// latency: </span><span class="t-string">0.38ms</span> <span class="t-comment">avg</span> <span class="t-cursor"></span></div>
-      </div>
-      <div class="terminal-metrics">
-        <div class="metric-cell">
-          <div class="metric-label">Sharpe Ratio</div>
-          <div class="metric-value up">2.41</div>
+      <!-- Gauge -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Risk Score</span>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-family:var(--mono);font-size:9px;letter-spacing:0.1em;color:var(--dim);border:1px solid var(--muted);padding:1px 5px;text-transform:uppercase">SIMULATED</span>
+            <span class="panel-badge">Nominal</span>
+          </div>
         </div>
-        <div class="metric-cell">
-          <div class="metric-label">Max Drawdown</div>
-          <div class="metric-value dn">-4.2%</div>
-        </div>
-        <div class="metric-cell">
-          <div class="metric-label">Win Rate</div>
-          <div class="metric-value">58.3%</div>
-        </div>
-        <div class="metric-cell">
-          <div class="metric-label">Avg Latency</div>
-          <div class="metric-value up">0.38ms</div>
+        <div class="gauge-wrap">
+          <svg class="gauge-svg" width="80" height="80" viewBox="0 0 80 80">
+            <circle cx="40" cy="40" r="32" fill="none" stroke="#2c3040" stroke-width="6"/>
+            <circle cx="40" cy="40" r="32" fill="none" stroke="#f07030" stroke-width="6"
+              stroke-dasharray="134 67" stroke-dashoffset="50"
+              stroke-linecap="round" transform="rotate(-135 40 40)"/>
+            <text x="40" y="44" text-anchor="middle" font-family="Barlow Condensed,sans-serif"
+              font-weight="800" font-size="18" fill="#eef1f8">72</text>
+          </svg>
+          <div class="gauge-info">
+            <div class="gauge-val">LOW</div>
+            <div class="gauge-label">Risk Level</div>
+            <div class="gauge-sub">↑ 3pts vs yesterday</div>
+          </div>
         </div>
       </div>
-    </div>
-  </section>
 
-  <!-- STATS BAR -->
-  <div class="stats-bar">
-    <div class="stat-cell">
-      <div class="stat-num">&lt;<span>1</span>ms</div>
-      <div class="stat-label">Strategy Execution</div>
-    </div>
-    <div class="stat-cell">
-      <div class="stat-num">100<span>%</span></div>
-      <div class="stat-label">Type-Safe by Design</div>
-    </div>
-    <div class="stat-cell">
-      <div class="stat-num">0</div>
-      <div class="stat-label">Unwraps in Production</div>
-    </div>
-    <div class="stat-cell">
-      <div class="stat-num">∞</div>
-      <div class="stat-label">Leeson Lessons Learned</div>
+      <!-- Activity -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Recent Signals</span>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-family:var(--mono);font-size:9px;letter-spacing:0.1em;color:var(--dim);border:1px solid var(--muted);padding:1px 5px;text-transform:uppercase">SIMULATED</span>
+            <span style="font-family:var(--mono);font-size:9px;color:var(--dim)">TODAY</span>
+          </div>
+        </div>
+        <div class="activity-list">
+          <div class="activity-item">
+            <div class="activity-dot" style="background:var(--green)"></div>
+            <div class="activity-sym">BTC/USDT</div>
+            <div class="activity-desc">Momentum long</div>
+            <div class="activity-val up">+1.8%</div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-dot" style="background:var(--red)"></div>
+            <div class="activity-sym">SOL/USDT</div>
+            <div class="activity-desc">Mean rev short</div>
+            <div class="activity-val dn">-0.4%</div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-dot" style="background:var(--orange)"></div>
+            <div class="activity-sym">ETH/USDT</div>
+            <div class="activity-desc">Regime filter</div>
+            <div class="activity-val" style="color:var(--orange)">HOLD</div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-dot" style="background:var(--green)"></div>
+            <div class="activity-sym">AVAX/USDT</div>
+            <div class="activity-desc">Breakout long</div>
+            <div class="activity-val up">+2.3%</div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- ARCHITECTURE SECTION -->
-  <section id="architecture" class="arch-section">
-    <div class="section-label">System Architecture</div>
-    <h2>Modular by <em>design,</em><br/>ruthless by execution.</h2>
-
-    <div class="arch-grid">
-      <div>
-        <p class="arch-desc">
-          A layered, trait-based architecture where every component is swappable.
-          Strategies don't know about exchanges. Risk doesn't know about strategies.
-          Everything communicates through typed interfaces.
-        </p>
-        <a href="#features" class="btn-ghost">Explore Features →</a>
-      </div>
-
-      <div class="arch-stack">
-        <div class="arch-layer">
-          <div class="arch-layer-num">05</div>
-          <div class="arch-layer-content">
-            <div class="arch-layer-name">Strategy Framework</div>
-            <div class="arch-layer-desc">Pluggable algos · Signal generation · Portfolio rebalancing</div>
-          </div>
-        </div>
-        <div class="arch-layer">
-          <div class="arch-layer-num">04</div>
-          <div class="arch-layer-content">
-            <div class="arch-layer-name">Risk Management</div>
-            <div class="arch-layer-desc">Position limits · Drawdown controls · Leeson-named guardrails</div>
-          </div>
-        </div>
-        <div class="arch-layer">
-          <div class="arch-layer-num">03</div>
-          <div class="arch-layer-content">
-            <div class="arch-layer-name">Order Execution</div>
-            <div class="arch-layer-desc">Smart routing · Fill simulation · Order lifecycle</div>
-          </div>
-        </div>
-        <div class="arch-layer">
-          <div class="arch-layer-num">02</div>
-          <div class="arch-layer-content">
-            <div class="arch-layer-name">Market Data</div>
-            <div class="arch-layer-desc">Real-time ingestion · Normalised types · Multi-exchange</div>
-          </div>
-        </div>
-        <div class="arch-layer">
-          <div class="arch-layer-num">01</div>
-          <div class="arch-layer-content">
-            <div class="arch-layer-name">Exchange Connectors</div>
-            <div class="arch-layer-desc">Trait-based · Swappable · Testnet supported</div>
-          </div>
-        </div>
-      </div>
+  <!-- Hero stats bottom left -->
+  <div class="hero-stats">
+    <div class="stat-card fade">
+      <div class="stat-card-num">&lt;<span>1</span>ms</div>
+      <div class="stat-card-label">Execution Latency</div>
     </div>
-  </section>
-
-  <!-- FEATURES -->
-  <section id="features">
-    <div class="section-label">Core Capabilities</div>
-    <h2>Everything a <em>serious</em><br/>system needs.</h2>
-
-    <div class="features-grid">
-      <div class="feature-card" data-num="01">
-        <svg class="feature-icon" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5">
-          <polyline points="2,22 10,14 16,18 24,8 30,12"/>
-          <line x1="2" y1="28" x2="30" y2="28"/>
-        </svg>
-        <div class="feature-title">Market Data</div>
-        <div class="feature-desc">
-          Real-time price feeds with robust fault tolerance and automatic
-          recovery. Normalised data types across all supported exchanges.
-        </div>
-        <div class="feature-tag">multi-exchange · real-time</div>
-      </div>
-
-      <div class="feature-card" data-num="02">
-        <svg class="feature-icon" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5">
-          <rect x="4" y="4" width="10" height="10"/>
-          <rect x="18" y="4" width="10" height="10"/>
-          <rect x="4" y="18" width="10" height="10"/>
-          <rect x="18" y="18" width="10" height="10"/>
-        </svg>
-        <div class="feature-title">Strategy Framework</div>
-        <div class="feature-desc">
-          Modular, composable strategy components. Portfolio management
-          and active trading strategies share a unified, swappable interface.
-        </div>
-        <div class="feature-tag">modular · composable</div>
-      </div>
-
-      <div class="feature-card" data-num="03">
-        <svg class="feature-icon" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5">
-          <circle cx="16" cy="16" r="12"/>
-          <line x1="16" y1="8" x2="16" y2="16"/>
-          <line x1="16" y1="16" x2="22" y2="20"/>
-        </svg>
-        <div class="feature-title">Backtesting Engine</div>
-        <div class="feature-desc">
-          Historical simulation with realistic execution modelling.
-          Validate strategies before they ever touch live capital.
-        </div>
-        <div class="feature-tag">historical · event-driven</div>
-      </div>
-
-      <div class="feature-card" data-num="04">
-        <svg class="feature-icon" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5">
-          <path d="M4 28 L12 18 L18 22 L26 10"/>
-          <circle cx="26" cy="10" r="3"/>
-        </svg>
-        <div class="feature-title">Risk Management</div>
-        <div class="feature-desc">
-          Named after Nick Leeson for a reason. Position limits, exposure
-          controls, and kill switches. No surprises, no exceptions.
-        </div>
-        <div class="feature-tag">always on · type-enforced</div>
-      </div>
-
-      <div class="feature-card" data-num="05">
-        <svg class="feature-icon" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5">
-          <rect x="3" y="6" width="26" height="20" rx="1"/>
-          <line x1="3" y1="12" x2="29" y2="12"/>
-          <line x1="10" y1="6" x2="10" y2="12"/>
-          <line x1="22" y1="6" x2="22" y2="12"/>
-        </svg>
-        <div class="feature-title">Signal Integration</div>
-        <div class="feature-desc">
-          External data sources feed a layered signal architecture.
-          Strategies remain context-aware without being tightly coupled
-          to any single data provider.
-        </div>
-        <div class="feature-tag">multi-source · decoupled</div>
-      </div>
-
-      <div class="feature-card" data-num="06">
-        <svg class="feature-icon" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5">
-          <rect x="2" y="4" width="28" height="24" rx="2"/>
-          <line x1="2" y1="10" x2="30" y2="10"/>
-          <circle cx="6" cy="7" r="1" fill="currentColor"/>
-          <circle cx="10" cy="7" r="1" fill="currentColor"/>
-          <circle cx="14" cy="7" r="1" fill="currentColor"/>
-          <polyline points="8,18 12,14 16,17 22,12"/>
-        </svg>
-        <div class="feature-title">Live Dashboard</div>
-        <div class="feature-desc">
-          Browser-based interface for real-time position monitoring,
-          strategy performance, and system health — built in Rust.
-        </div>
-        <div class="feature-tag">real-time · coming soon</div>
-      </div>
+    <div class="stat-card fade">
+      <div class="stat-card-num">0</div>
+      <div class="stat-card-label">Unwraps in Prod</div>
     </div>
-  </section>
-
-  <!-- PHILOSOPHY -->
-  <section id="philosophy" class="philosophy">
-    <div class="v-rule"></div>
-    <div class="philosophy-content">
-      <div class="section-label" style="justify-content: center; margin-bottom: 0;">Design Philosophy</div>
-      <blockquote class="philosophy-quote">
-        "The system is named after Nick Leeson not as celebration,
-        but as <strong>reminder</strong>. Every guardrail, every type constraint,
-        every risk limit exists because someone, somewhere,
-        <strong>skipped it.</strong>"
-      </blockquote>
-      <div class="philosophy-attr">— RogueCapital Development Notes</div>
+    <div class="stat-card fade">
+      <div class="stat-card-num">∞</div>
+      <div class="stat-card-label">Leeson Lessons</div>
     </div>
-  </section>
-
-  <!-- LEESON BAR -->
-  <div class="leeson-bar">
-    <span class="leeson-label">⚠ Risk Disclaimer</span>
-    <span class="leeson-text">
-      This is a <strong>personal research project</strong>. Not financial advice.
-      Not investment advice. Past performance of backtests does not predict future results.
-      Always understand what your code does before it touches real capital.
-    </span>
   </div>
+</section>
 
-  <!-- FOOTER -->
-  <footer>
+<!-- STATS BAR -->
+<div class="stats-bar">
+  <div class="stats-cell">
+    <div class="stats-num">&lt;<span>1</span>ms</div>
+    <div class="stats-label">Strategy Execution</div>
+  </div>
+  <div class="stats-cell">
+    <div class="stats-num">100<span>%</span></div>
+    <div class="stats-label">Type-Safe by Design</div>
+  </div>
+  <div class="stats-cell">
+    <div class="stats-num">0</div>
+    <div class="stats-label">Unwraps in Production</div>
+  </div>
+  <div class="stats-cell">
+    <div class="stats-num">∞</div>
+    <div class="stats-label">Leeson Lessons Learned</div>
+  </div>
+</div>
+
+<!-- ARCHITECTURE -->
+<section id="architecture" class="arch">
+  <div class="section-eyebrow">System Architecture</div>
+  <h2>MODULAR BY <em>design,</em><br/>RUTHLESS BY EXECUTION.</h2>
+  <div class="arch-grid">
     <div>
-      <div class="footer-logo">ROGUE<span>CAPITAL</span></div>
-      <div class="footer-sub">roguecapital.eu · Algorithmic Trading Infrastructure · Built in Rust <svg viewBox="0 0 106 106" width="12" height="12" fill="none" aria-hidden="true" style="vertical-align:middle;color:#e05a4e" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><g transform="translate(53,53)"><path fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linejoin="round" transform="translate(0.5,0.5)" d="M -9,-15 H 4 C 12,-15 12,-7 4,-7 H -9 Z M -40,22 H 0 V 11 H -9 V 3 H 1 C 12,3 6,22 15,22 H 40 V 3 H 34 V 5 C 34,13 25,12 24,7 C 23,2 19,-2 18,-2 C 33,-10 24,-26 12,-26 H -35 V -15 H -25 V 11 H -40 Z"/><g mask="url(#rl-holes)"><circle r="43" fill="none" stroke="currentColor" stroke-width="9"/><g><polygon id="rl-cog" fill="currentColor" stroke="currentColor" stroke-width="3" stroke-linejoin="round" points="46,3 51,0 46,-3"/><use xlink:href="#rl-cog" transform="rotate(11.25)"/><use xlink:href="#rl-cog" transform="rotate(22.50)"/><use xlink:href="#rl-cog" transform="rotate(33.75)"/><use xlink:href="#rl-cog" transform="rotate(45.00)"/><use xlink:href="#rl-cog" transform="rotate(56.25)"/><use xlink:href="#rl-cog" transform="rotate(67.50)"/><use xlink:href="#rl-cog" transform="rotate(78.75)"/><use xlink:href="#rl-cog" transform="rotate(90.00)"/><use xlink:href="#rl-cog" transform="rotate(101.25)"/><use xlink:href="#rl-cog" transform="rotate(112.50)"/><use xlink:href="#rl-cog" transform="rotate(123.75)"/><use xlink:href="#rl-cog" transform="rotate(135.00)"/><use xlink:href="#rl-cog" transform="rotate(146.25)"/><use xlink:href="#rl-cog" transform="rotate(157.50)"/><use xlink:href="#rl-cog" transform="rotate(168.75)"/><use xlink:href="#rl-cog" transform="rotate(180.00)"/><use xlink:href="#rl-cog" transform="rotate(191.25)"/><use xlink:href="#rl-cog" transform="rotate(202.50)"/><use xlink:href="#rl-cog" transform="rotate(213.75)"/><use xlink:href="#rl-cog" transform="rotate(225.00)"/><use xlink:href="#rl-cog" transform="rotate(236.25)"/><use xlink:href="#rl-cog" transform="rotate(247.50)"/><use xlink:href="#rl-cog" transform="rotate(258.75)"/><use xlink:href="#rl-cog" transform="rotate(270.00)"/><use xlink:href="#rl-cog" transform="rotate(281.25)"/><use xlink:href="#rl-cog" transform="rotate(292.50)"/><use xlink:href="#rl-cog" transform="rotate(303.75)"/><use xlink:href="#rl-cog" transform="rotate(315.00)"/><use xlink:href="#rl-cog" transform="rotate(326.25)"/><use xlink:href="#rl-cog" transform="rotate(337.50)"/><use xlink:href="#rl-cog" transform="rotate(348.75)"/></g><g><polygon id="rl-mount" fill="currentColor" stroke="currentColor" stroke-width="6" stroke-linejoin="round" points="-7,-42 0,-35 7,-42"/><use xlink:href="#rl-mount" transform="rotate(72)"/><use xlink:href="#rl-mount" transform="rotate(144)"/><use xlink:href="#rl-mount" transform="rotate(216)"/><use xlink:href="#rl-mount" transform="rotate(288)"/></g></g><mask id="rl-holes"><rect x="-60" y="-60" width="120" height="120" fill="white"/><circle id="rl-hole" cy="-40" r="3"/><use xlink:href="#rl-hole" transform="rotate(72)"/><use xlink:href="#rl-hole" transform="rotate(144)"/><use xlink:href="#rl-hole" transform="rotate(216)"/><use xlink:href="#rl-hole" transform="rotate(288)"/></mask></g></svg></div>
+      <p class="arch-desc">A layered, trait-based architecture where every component is swappable. Strategies don't know about exchanges. Risk doesn't know about strategies. Everything communicates through typed interfaces.</p>
+      <a href="#features" class="btn-ghost">Explore Features →</a>
     </div>
-    <div class="footer-links">
-      <a href="https://github.com/RogueCapital"><svg viewBox="0 0 16 16" width="12" height="12" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>GitHub</a>
-      <a href="#architecture">Docs</a>
-      <!-- <a href="mailto:info@roguecapital.eu">Contact</a> -->
+    <div class="arch-stack">
+      <div class="arch-row">
+        <div class="arch-num">05</div>
+        <div class="arch-content">
+          <div class="arch-name">Strategy Framework</div>
+          <div class="arch-desc2">Pluggable algos · Signal generation · Portfolio rebalancing</div>
+        </div>
+      </div>
+      <div class="arch-row">
+        <div class="arch-num">04</div>
+        <div class="arch-content">
+          <div class="arch-name">Risk Management</div>
+          <div class="arch-desc2">Position limits · Drawdown controls · Leeson-named guardrails</div>
+        </div>
+      </div>
+      <div class="arch-row">
+        <div class="arch-num">03</div>
+        <div class="arch-content">
+          <div class="arch-name">Order Execution</div>
+          <div class="arch-desc2">Smart routing · Fill simulation · Order lifecycle</div>
+        </div>
+      </div>
+      <div class="arch-row">
+        <div class="arch-num">02</div>
+        <div class="arch-content">
+          <div class="arch-name">Market Data</div>
+          <div class="arch-desc2">Real-time ingestion · Normalised types · Multi-exchange</div>
+        </div>
+      </div>
+      <div class="arch-row">
+        <div class="arch-num">01</div>
+        <div class="arch-content">
+          <div class="arch-name">Exchange Connectors</div>
+          <div class="arch-desc2">Trait-based · Swappable · Testnet supported</div>
+        </div>
+      </div>
     </div>
-  </footer>
+  </div>
+</section>
 
-  <script>
+<!-- FEATURES -->
+<section id="features">
+  <div class="section-eyebrow">Core Capabilities</div>
+  <h2>EVERYTHING A <em>serious</em><br/>SYSTEM NEEDS.</h2>
+  <div class="features-grid">
+    <div class="feat" data-n="01">
+      <svg class="feat-icon" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.5">
+        <polyline points="2,20 8,12 14,16 22,6 26,10"/>
+        <line x1="2" y1="24" x2="26" y2="24"/>
+      </svg>
+      <div class="feat-title">Market Data</div>
+      <div class="feat-desc">Real-time price feeds with robust fault tolerance and automatic recovery. Normalised data types across all supported exchanges.</div>
+      <div class="feat-tag">multi-exchange · real-time</div>
+    </div>
+    <div class="feat" data-n="02">
+      <svg class="feat-icon" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="3" y="3" width="9" height="9"/><rect x="16" y="3" width="9" height="9"/>
+        <rect x="3" y="16" width="9" height="9"/><rect x="16" y="16" width="9" height="9"/>
+      </svg>
+      <div class="feat-title">Strategy Framework</div>
+      <div class="feat-desc">Modular, composable strategy components. Portfolio management and active trading strategies share a unified, swappable interface.</div>
+      <div class="feat-tag">modular · composable</div>
+    </div>
+    <div class="feat" data-n="03">
+      <svg class="feat-icon" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.5">
+        <circle cx="14" cy="14" r="11"/>
+        <line x1="14" y1="7" x2="14" y2="14"/>
+        <line x1="14" y1="14" x2="19" y2="18"/>
+      </svg>
+      <div class="feat-title">Backtesting Engine</div>
+      <div class="feat-desc">Historical simulation with realistic execution modelling. Validate strategies before they ever touch live capital.</div>
+      <div class="feat-tag">historical · event-driven</div>
+    </div>
+    <div class="feat" data-n="04">
+      <svg class="feat-icon" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M4 24 L10 16 L16 19 L22 8"/>
+        <circle cx="22" cy="8" r="3"/>
+      </svg>
+      <div class="feat-title">Risk Management</div>
+      <div class="feat-desc">Named after Nick Leeson for a reason. Position limits, exposure controls, and kill switches. No surprises, no exceptions.</div>
+      <div class="feat-tag">always on · type-enforced</div>
+    </div>
+    <div class="feat" data-n="05">
+      <svg class="feat-icon" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="2" y="5" width="24" height="18" rx="1"/>
+        <line x1="2" y1="11" x2="26" y2="11"/>
+        <line x1="8" y1="5" x2="8" y2="11"/>
+        <line x1="20" y1="5" x2="20" y2="11"/>
+      </svg>
+      <div class="feat-title">Signal Integration</div>
+      <div class="feat-desc">External data sources feed a layered signal architecture. Strategies remain context-aware without being tightly coupled to any single data provider.</div>
+      <div class="feat-tag">multi-source · decoupled</div>
+    </div>
+    <div class="feat" data-n="06">
+      <svg class="feat-icon" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="2" y="4" width="24" height="20" rx="2"/>
+        <line x1="2" y1="10" x2="26" y2="10"/>
+        <circle cx="5" cy="7" r="1" fill="currentColor"/>
+        <circle cx="9" cy="7" r="1" fill="currentColor"/>
+        <polyline points="6,17 10,13 14,16 20,11"/>
+      </svg>
+      <div class="feat-title">Live Dashboard</div>
+      <div class="feat-desc">Browser-based interface for real-time position monitoring, strategy performance, and system health — built in Rust.</div>
+      <div class="feat-tag">real-time · coming soon</div>
+    </div>
+  </div>
+</section>
+
+<!-- PHILOSOPHY -->
+<section id="philosophy" class="philosophy">
+  <div class="phil-rule"></div>
+  <div class="section-eyebrow" style="justify-content:center;margin-bottom:0">Design Philosophy</div>
+  <blockquote class="phil-quote">
+    "The system is named after Nick Leeson not as celebration, but as <strong>reminder</strong>.
+    Every guardrail, every type constraint, every risk limit exists because someone, somewhere,
+    <strong>skipped it.</strong>"
+  </blockquote>
+  <div class="phil-attr">— RogueCapital Development Notes</div>
+</section>
+
+<!-- DISCLAIMER -->
+<div class="disclaimer">
+  <span class="disc-label">⚠ Risk Disclaimer</span>
+  <span class="disc-text">This is a <strong>personal research project</strong>. Not financial advice. Not investment advice. Always understand what your code does before it touches real capital.</span>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div>
+    <div class="footer-logo">ROGUE<span>CAPITAL</span></div>
+    <div class="footer-sub">roguecapital.eu · Algorithmic Trading Infrastructure · Built in Rust <svg viewBox="0 0 106 106" width="12" height="12" fill="none" aria-hidden="true" style="vertical-align:middle;color:#f07030" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><g transform="translate(53,53)"><path fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linejoin="round" transform="translate(0.5,0.5)" d="M -9,-15 H 4 C 12,-15 12,-7 4,-7 H -9 Z M -40,22 H 0 V 11 H -9 V 3 H 1 C 12,3 6,22 15,22 H 40 V 3 H 34 V 5 C 34,13 25,12 24,7 C 23,2 19,-2 18,-2 C 33,-10 24,-26 12,-26 H -35 V -15 H -25 V 11 H -40 Z"/><g mask="url(#rl-holes)"><circle r="43" fill="none" stroke="currentColor" stroke-width="9"/><g><polygon id="rl-cog" fill="currentColor" stroke="currentColor" stroke-width="3" stroke-linejoin="round" points="46,3 51,0 46,-3"/><use xlink:href="#rl-cog" transform="rotate(11.25)"/><use xlink:href="#rl-cog" transform="rotate(22.50)"/><use xlink:href="#rl-cog" transform="rotate(33.75)"/><use xlink:href="#rl-cog" transform="rotate(45.00)"/><use xlink:href="#rl-cog" transform="rotate(56.25)"/><use xlink:href="#rl-cog" transform="rotate(67.50)"/><use xlink:href="#rl-cog" transform="rotate(78.75)"/><use xlink:href="#rl-cog" transform="rotate(90.00)"/><use xlink:href="#rl-cog" transform="rotate(101.25)"/><use xlink:href="#rl-cog" transform="rotate(112.50)"/><use xlink:href="#rl-cog" transform="rotate(123.75)"/><use xlink:href="#rl-cog" transform="rotate(135.00)"/><use xlink:href="#rl-cog" transform="rotate(146.25)"/><use xlink:href="#rl-cog" transform="rotate(157.50)"/><use xlink:href="#rl-cog" transform="rotate(168.75)"/><use xlink:href="#rl-cog" transform="rotate(180.00)"/><use xlink:href="#rl-cog" transform="rotate(191.25)"/><use xlink:href="#rl-cog" transform="rotate(202.50)"/><use xlink:href="#rl-cog" transform="rotate(213.75)"/><use xlink:href="#rl-cog" transform="rotate(225.00)"/><use xlink:href="#rl-cog" transform="rotate(236.25)"/><use xlink:href="#rl-cog" transform="rotate(247.50)"/><use xlink:href="#rl-cog" transform="rotate(258.75)"/><use xlink:href="#rl-cog" transform="rotate(270.00)"/><use xlink:href="#rl-cog" transform="rotate(281.25)"/><use xlink:href="#rl-cog" transform="rotate(292.50)"/><use xlink:href="#rl-cog" transform="rotate(303.75)"/><use xlink:href="#rl-cog" transform="rotate(315.00)"/><use xlink:href="#rl-cog" transform="rotate(326.25)"/><use xlink:href="#rl-cog" transform="rotate(337.50)"/><use xlink:href="#rl-cog" transform="rotate(348.75)"/></g><g><polygon id="rl-mount" fill="currentColor" stroke="currentColor" stroke-width="6" stroke-linejoin="round" points="-7,-42 0,-35 7,-42"/><use xlink:href="#rl-mount" transform="rotate(72)"/><use xlink:href="#rl-mount" transform="rotate(144)"/><use xlink:href="#rl-mount" transform="rotate(216)"/><use xlink:href="#rl-mount" transform="rotate(288)"/></g></g><mask id="rl-holes"><rect x="-60" y="-60" width="120" height="120" fill="white"/><circle id="rl-hole" cy="-40" r="3"/><use xlink:href="#rl-hole" transform="rotate(72)"/><use xlink:href="#rl-hole" transform="rotate(144)"/><use xlink:href="#rl-hole" transform="rotate(216)"/><use xlink:href="#rl-hole" transform="rotate(288)"/></mask></g></svg></div>
+  </div>
+  <div class="footer-links">
+    <a href="https://github.com/RogueCapital"><svg viewBox="0 0 16 16" width="12" height="12" fill="currentColor" aria-hidden="true" style="vertical-align:middle"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg> GitHub</a>
+    <a href="#architecture">Docs</a>
+    <!-- <a href="mailto:info@roguecapital.eu">Contact</a> -->
+  </div>
+</footer>
+
+<script>
+  // ── LIVE TICKER (Binance public WebSocket, no auth) ──
   (function () {
     var SYMBOLS = ['BTC', 'ETH', 'SOL', 'BNB', 'AVAX'];
     var STREAM_URL = 'wss://stream.binance.com:9443/stream?streams=' +
       SYMBOLS.map(function (s) { return s.toLowerCase() + 'usdt@ticker'; }).join('/');
 
-    /* How often to repaint the DOM (ms). The WS stream fires ~every second
-       per symbol but we intentionally slow down the visual refresh. */
     var UPDATE_INTERVAL = 30000;
-    /* First paint correction: apply data shortly after the socket delivers
-       its first batch of messages, before the regular interval fires. */
     var FIRST_UPDATE_DELAY = 4000;
     var MAX_BACKOFF = 64000;
-
     var cache = {};
     var retryDelay = 2000;
     var ws = null;
@@ -1144,44 +889,27 @@
         var pct = parseFloat(data.P);
         var up = pct >= 0;
         var arrow = up ? '▲' : '▼';
-        var cls = up ? 'up' : 'dn';
-        var priceText = arrow + ' ' + fmt(data.c);
-        var chgText = fmtPct(data.P);
+        var cls = up ? 't-up' : 't-dn';
 
-        var items = document.querySelectorAll('[data-sym="' + short + '"]');
-        items.forEach(function (item) {
-          var priceEl = item.querySelector('.ticker-price');
-          var chgEl = item.querySelector('.ticker-chg');
-          if (priceEl) {
-            priceEl.textContent = priceText;
-            priceEl.className = 'ticker-price ' + cls;
-          }
-          if (chgEl) {
-            chgEl.textContent = chgText;
-            chgEl.className = 'ticker-chg ' + cls;
-          }
+        document.querySelectorAll('[data-sym="' + short + '"]').forEach(function (item) {
+          var priceEl = item.querySelector('.t-price');
+          var chgEl = item.querySelector('.t-chg');
+          if (priceEl) { priceEl.textContent = arrow + ' ' + fmt(data.c); priceEl.className = 't-price ' + cls; }
+          if (chgEl)   { chgEl.textContent = fmtPct(data.P); chgEl.className = 't-chg ' + cls; }
         });
       });
     }
 
     function connect() {
       try { ws = new WebSocket(STREAM_URL); } catch (e) { return; }
-
-      ws.onopen = function () {
-        retryDelay = 2000;
-      };
-
+      ws.onopen = function () { retryDelay = 2000; };
       ws.onmessage = function (e) {
         try {
           var msg = JSON.parse(e.data);
-          if (msg.data && msg.data.s) {
-            cache[msg.data.s] = msg.data;
-          }
+          if (msg.data && msg.data.s) cache[msg.data.s] = msg.data;
         } catch (_) {}
       };
-
       ws.onerror = function () {};
-
       ws.onclose = function () {
         ws = null;
         setTimeout(connect, retryDelay);
@@ -1193,7 +921,61 @@
     setTimeout(updateDOM, FIRST_UPDATE_DELAY);
     setInterval(updateDOM, UPDATE_INTERVAL);
   })();
-  </script>
 
+  // ── PORTFOLIO CHART ──
+  const ctx = document.getElementById('heroChart').getContext('2d');
+  const labels = Array.from({length: 60}, (_, i) => i);
+  const data = [100,101,100.5,102,103,102,104,103.5,105,104,
+                106,105.5,107,106,108,107.5,109,108,110,109,
+                111,110.5,112,111,113,112,114,113.5,115,114,
+                116,115,117,116.5,118,117,119,118.5,120,119,
+                121,120.5,122,121,123,122,124,123.5,125,124,
+                126,125,127,126.5,128,127,129,128.5,130,129];
+
+  const gradient = ctx.createLinearGradient(0, 0, 0, 160);
+  gradient.addColorStop(0, 'rgba(240,112,48,0.35)');
+  gradient.addColorStop(0.6, 'rgba(240,112,48,0.08)');
+  gradient.addColorStop(1, 'rgba(240,112,48,0)');
+
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        data,
+        borderColor: '#f07030',
+        borderWidth: 1.5,
+        backgroundColor: gradient,
+        fill: true,
+        tension: 0.4,
+        pointRadius: 0,
+        pointHoverRadius: 3,
+        pointHoverBackgroundColor: '#f07030',
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: {
+        backgroundColor: '#1e2229',
+        borderColor: '#363d4e',
+        borderWidth: 1,
+        titleColor: '#9aa3bc',
+        bodyColor: '#f07030',
+        bodyFont: { family: 'JetBrains Mono', size: 11 },
+        callbacks: { label: ctx => ` +${(ctx.parsed.y - 100).toFixed(1)}%` }
+      }},
+      scales: {
+        x: { display: false },
+        y: {
+          display: true, position: 'right',
+          grid: { color: '#2c3040', drawBorder: false },
+          ticks: { color: '#3d4558', font: { family: 'JetBrains Mono', size: 9 }, callback: v => v + '%' }
+        }
+      },
+      interaction: { intersect: false, mode: 'index' }
+    }
+  });
+</script>
 </body>
 </html>
